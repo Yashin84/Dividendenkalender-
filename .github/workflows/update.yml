@@ -17,12 +17,15 @@ jobs:
         with:
           python-version: '3.10'
 
+      - name: Dependencies installieren
+        run: pip install -r requirements.txt
+
       - name: Skript ausführen
         run: python dividenden.py
 
       - name: Kalender speichern
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "Automatisches Update des Dividenden-Kalenders"
+          commit_message: "Automatisches Update der Dividenden"
           file_pattern: dividenden.ics
           
