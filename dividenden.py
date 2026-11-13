@@ -1,22 +1,60 @@
-from datetime import datetime
+from datetime import datetime, timedelta
+import yfinance as yf
 
-ics_content = """BEGIN:VCALENDAR
+# Deine echten Aktien-Ticker
+tickers = [
+    "TLX.DE",   # Talanx
+    "SIE.DE",   # Siemens
+    "TD",       # Toronto Dominion
+    "GOOG",     # Alphabet C
+    "BMY",      # Bristol Myers Squibb
+    "PFE",      # Pfizer
+    "LIN",      # Linde
+    "ALV.DE",   # Allianz
+    "KKR",      # KKR
+    "2318.HK",  # Ping An Insurance
+    "HHH",      # Howard Hughes
+    "INTC"      # Intel
+]
+
+vevents = []
+
+for ticker_symbol in tickers:
+    try:
+        stock = yf.Ticker(ticker_symbol)
+        dividends = stock.dividends
+        
+        # Durchsuche die Dividenden ab 2026
+        for date, amount in dividends.items():
+            if date.year >= 2026:
+                dt_start = date.strftime('%Y%m%d')
+                dt_end = (date + timedelta(days=1)).strftime('%Y%m%d')
+                uid = f"div-{ticker_symbol}-{dt_start}@yashin84"
+                
+                event = f"""BEGIN:VEVENT
+UID:{uid}
+DTSTAMP:{datetime.utcnow().strftime('%Y%m%dT%H%M%SZ')}
+DTSTART;VALUE=DATE:{dt_start}
+DTEND;VALUE=DATE:{dt_end}
+SUMMARY:Dividende: {ticker_symbol} ({amount:.2f})
+DESCRIPTION:Automatisierter Abruf via yfinance
+END:VEVENT"""
+                vevents.append(event)
+    except Exception as e:
+        print(f"Fehler bei {ticker_symbol}: {e}")
+
+# ICS-Grundgerüst zusammenbauen
+ics_header = """BEGIN:VCALENDAR
 VERSION:2.0
 PRODID:-//Dividenden Kalender//DE
 CALSCALE:GREGORIAN
-METHOD:PUBLISH
-BEGIN:VEVENT
-UID:test-dividende-20261114@yashin84
-DTSTAMP:20261113T200000Z
-DTSTART;VALUE=DATE:20261114
-DTEND;VALUE=DATE:20261115
-SUMMARY:Test-Dividende: Allianz SE (13,80 EUR)
-DESCRIPTION:Automatisierter Test-Eintrag aus GitHub Actions
-END:VEVENT
-END:VCALENDAR
-"""
+METHOD:PUBLISH"""
+
+ics_footer = "END:VCALENDAR"
+
+ics_content = "\n".join([ics_header] + vevents + [ics_footer])
 
 with open('dividenden.ics', 'wb') as f:
     f.write(ics_content.strip().encode('utf-8'))
 
-print("Kalender erfolgreich generiert!")
+print(f"Kalender mit {len(vevents)} echten Dividenden-Terminen generiert!")
