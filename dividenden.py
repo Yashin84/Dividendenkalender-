@@ -18,15 +18,18 @@ tickers = [
 ]
 
 vevents = []
+# Das heutige Datum als Startpunkt, damit nur die Zukunft angezeigt wird
+heute = datetime.utcnow().date()
 
 for ticker_symbol in tickers:
     try:
         stock = yf.Ticker(ticker_symbol)
         dividends = stock.dividends
         
-        # Durchsuche die Dividenden ab 2026
+        # Durchsuche alle bekannten Dividenden, filtere aber auf das Datum ab heute
         for date, amount in dividends.items():
-            if date.year >= 2026:
+            div_date = date.date() if hasattr(date, 'date') else date
+            if div_date >= heute:
                 dt_start = date.strftime('%Y%m%d')
                 dt_end = (date + timedelta(days=1)).strftime('%Y%m%d')
                 uid = f"div-{ticker_symbol}-{dt_start}@yashin84"
@@ -37,7 +40,7 @@ DTSTAMP:{datetime.utcnow().strftime('%Y%m%dT%H%M%SZ')}
 DTSTART;VALUE=DATE:{dt_start}
 DTEND;VALUE=DATE:{dt_end}
 SUMMARY:Dividende: {ticker_symbol} ({amount:.2f})
-DESCRIPTION:Automatisierter Abruf via yfinance
+DESCRIPTION:Zukünftiger Termin via yfinance
 END:VEVENT"""
                 vevents.append(event)
     except Exception as e:
@@ -57,4 +60,4 @@ ics_content = "\n".join([ics_header] + vevents + [ics_footer])
 with open('dividenden.ics', 'wb') as f:
     f.write(ics_content.strip().encode('utf-8'))
 
-print(f"Kalender mit {len(vevents)} echten Dividenden-Terminen generiert!")
+print(f"Kalender mit {len(vevents)} zukünftigen Terminen generiert!")
